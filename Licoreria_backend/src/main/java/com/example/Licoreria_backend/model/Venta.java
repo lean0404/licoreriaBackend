@@ -21,6 +21,9 @@ public class Venta {
 
     private String metodoPago;
 
+    private String tipoComprobante; // BOLETA o FACTURA
+    private String documentoCliente; // DNI o RUC
+
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Usuario vendedor;

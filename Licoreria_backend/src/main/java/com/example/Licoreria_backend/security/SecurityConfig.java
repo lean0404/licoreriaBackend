@@ -35,9 +35,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tipos-producto/**").permitAll()
-                        .requestMatchers("/api/productos").permitAll() // GET sin login
-                        .requestMatchers("/api/productos/**").permitAll() // para evitar error en OPTIONS
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/productos").permitAll()
+                        .requestMatchers("/api/productos/**").permitAll()
+                        .anyRequest().authenticated() // cualquier otro endpoint necesita autenticación
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
