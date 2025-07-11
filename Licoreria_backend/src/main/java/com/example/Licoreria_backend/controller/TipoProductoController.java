@@ -21,4 +21,10 @@ public class TipoProductoController {
     public List<TipoProducto> listar() {
         return tipoProductoService.listarTodos();
     }
+
+    @GetMapping("/{id}")
+    public TipoProducto obtenerPorId(@PathVariable Long id) {
+        return tipoProductoService.obtenerPorId(id)
+                .orElseThrow(() -> new RuntimeException("TipoProducto no encontrado con id " + id));
+    }
 }
