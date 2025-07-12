@@ -10,6 +10,7 @@ import com.example.Licoreria_backend.repository.VentaRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,17 @@ public class VentaService {
 
     public List<VentaHistorialDTO> obtenerHistorialPorVendedor(Usuario vendedor) {
         List<Venta> ventas = ventaRepository.findByVendedor(vendedor);
+        return mapToHistorial(ventas);
+    }
 
+    public List<VentaHistorialDTO> obtenerHistorialPorVendedorYFechas(Usuario vendedor, LocalDate desde, LocalDate hasta) {
+        LocalDateTime desdeDT = desde.atStartOfDay();
+        LocalDateTime hastaDT = hasta.atTime(23, 59, 59);
+        List<Venta> ventas = ventaRepository.findByVendedorAndFechaBetween(vendedor, desdeDT, hastaDT);
+        return mapToHistorial(ventas);
+    }
+
+    private List<VentaHistorialDTO> mapToHistorial(List<Venta> ventas) {
         List<VentaHistorialDTO> historial = new ArrayList<>();
         for (Venta venta : ventas) {
             int totalProductos = venta.getDetalles().stream()
@@ -72,32 +83,4 @@ public class VentaService {
         }
         return historial;
     }
-
-    public List<VentaHistorialDTO> obtenerHistorialPorVendedorYFechas(Usuario vendedor, String desde, String hasta) {
-        LocalDateTime desdeFecha = LocalDateTime.parse(desde + "T00:00:00");
-        LocalDateTime hastaFecha = LocalDateTime.parse(hasta + "T23:59:59");
-
-        List<Venta> ventas = ventaRepository.findByVendedorAndFechaBetween(vendedor, desdeFecha, hastaFecha);
-
-        List<VentaHistorialDTO> historial = new ArrayList<>();
-        for (Venta venta : ventas) {
-            int totalProductos = venta.getDetalles().stream()
-                    .mapToInt(DetalleVenta::getCantidad).sum();
-            double totalVenta = venta.getDetalles().stream()
-                    .mapToDouble(det -> det.getCantidad() * det.getPrecioUnitario()).sum();
-
-            historial.add(new VentaHistorialDTO(
-                    venta.getId(),
-                    venta.getFecha(),
-                    venta.getMetodoPago(),
-                    venta.getTipoComprobante(),
-                    venta.getDocumentoCliente(),
-                    totalProductos,
-                    totalVenta
-            ));
-        }
-        return historial;
-    }
-
-
 }
