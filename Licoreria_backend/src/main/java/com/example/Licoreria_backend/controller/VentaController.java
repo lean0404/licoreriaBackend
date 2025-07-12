@@ -1,5 +1,6 @@
 package com.example.Licoreria_backend.controller;
 
+import com.example.Licoreria_backend.dto.VentaHistorialDTO;
 import com.example.Licoreria_backend.dto.VentaRequest;
 import com.example.Licoreria_backend.dto.ItemVentaRequest;
 import com.example.Licoreria_backend.model.DetalleVenta;
@@ -17,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
 import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,7 +40,6 @@ public class VentaController {
 
     @PostMapping
     public void crearVenta(@RequestBody VentaRequest request, Authentication authentication, HttpServletResponse response) throws IOException {
-        // fallback manual
         if (authentication == null) {
             authentication = SecurityContextHolder.getContext().getAuthentication();
         }
@@ -49,7 +50,7 @@ public class VentaController {
         Usuario vendedor = usuarioService.obtenerPorUsername(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Construir detalles
+        // Construir detalles de venta
         List<DetalleVenta> detalles = new ArrayList<>();
         for (ItemVentaRequest item : request.getItems()) {
             Producto p = productoService.obtenerPorId(item.getProductoId())
@@ -57,8 +58,11 @@ public class VentaController {
             detalles.add(new DetalleVenta(null, item.getCantidad(), p.getPrecio(), p, null));
         }
 
+        // Crear venta con método, tipo comprobante y documento del cliente
         Venta venta = new Venta();
         venta.setMetodoPago(request.getMetodoPago());
+        venta.setTipoComprobante(request.getTipoComprobante());
+        venta.setDocumentoCliente(request.getDocumentoCliente());
 
         Venta ventaGuardada = ventaService.registrarVenta(venta, detalles, vendedor);
 
@@ -76,9 +80,9 @@ public class VentaController {
         Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
         Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 12);
 
-        document.add(new Paragraph("Licorería - " + request.getTipoComprobante(), titleFont));
+        document.add(new Paragraph("Licorería - " + venta.getTipoComprobante(), titleFont));
         document.add(new Paragraph("Fecha: " + venta.getFecha(), normalFont));
-        document.add(new Paragraph("Cliente (" + request.getTipoComprobante() + "): " + request.getDocumentoCliente(), normalFont));
+        document.add(new Paragraph("Cliente (" + venta.getTipoComprobante() + "): " + venta.getDocumentoCliente(), normalFont));
         document.add(new Paragraph("Vendedor: " + venta.getVendedor().getUsername(), normalFont));
         document.add(new Paragraph("Método de Pago: " + venta.getMetodoPago(), normalFont));
         document.add(Chunk.NEWLINE);
@@ -118,4 +122,40 @@ public class VentaController {
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         return cell;
     }
+
+    @GetMapping("/mis-ventas")
+    public List<VentaHistorialDTO> obtenerMisVentas(Authentication authentication) {
+        if (authentication == null) {
+            authentication = SecurityContextHolder.getContext().getAuthentication();
+        }
+        if (authentication == null) {
+            throw new RuntimeException("No hay usuario autenticado");
+        }
+
+        Usuario vendedor = usuarioService.obtenerPorUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        return ventaService.obtenerHistorialPorVendedor(vendedor);
+    }
+
+    @GetMapping("/mis-ventas/por-fechas")
+    public List<VentaHistorialDTO> obtenerMisVentasPorFechas(
+            @RequestParam String desde,
+            @RequestParam String hasta,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            authentication = SecurityContextHolder.getContext().getAuthentication();
+        }
+        if (authentication == null) {
+            throw new RuntimeException("No hay usuario autenticado");
+        }
+
+        Usuario vendedor = usuarioService.obtenerPorUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        return ventaService.obtenerHistorialPorVendedorYFechas(vendedor, desde, hasta);
+    }
+
+
 }
