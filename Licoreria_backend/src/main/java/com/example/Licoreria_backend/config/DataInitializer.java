@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.*;
+import java.util.Set;
 
 @Configuration
 public class DataInitializer {
@@ -24,7 +24,6 @@ public class DataInitializer {
             Rol vendedorRol = rolRepository.findByNombre("VENDEDOR")
                     .orElseGet(() -> rolRepository.save(new Rol(null, "VENDEDOR")));
 
-            // Crear usuario ADMIN si no existe
             if (usuarioRepository.findByUsername("admin").isEmpty()) {
                 Usuario admin = new Usuario();
                 admin.setUsername("admin");
@@ -33,6 +32,16 @@ public class DataInitializer {
                 admin.setRoles(Set.of(adminRol));
                 usuarioRepository.save(admin);
                 System.out.println("Usuario admin creado: usuario=admin / contraseña=admin123");
+            }
+
+            if (usuarioRepository.findByUsername("vendedor").isEmpty()) {
+                Usuario vendedor = new Usuario();
+                vendedor.setUsername("vendedor");
+                vendedor.setPassword(encoder.encode("vendedor123"));
+                vendedor.setActivo(true);
+                vendedor.setRoles(Set.of(vendedorRol));
+                usuarioRepository.save(vendedor);
+                System.out.println("Usuario vendedor creado: usuario=vendedor / contraseña=vendedor123");
             }
         };
     }

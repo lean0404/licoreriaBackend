@@ -91,7 +91,10 @@ public class AuthController {
     }
 
     @PostMapping("/registrar")
-    public ResponseEntity<String> registrarUsuario(@RequestBody RegistroUsuarioRequest request) {
+    public ResponseEntity<?> registrarUsuario(@RequestBody RegistroUsuarioRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("Intento registrar usuario por: " + (auth != null ? auth.getName() : "NO AUTENTICADO"));
+
         if (usuarioRepository.findByUsername(request.getUsername()).isPresent()) {
             return ResponseEntity.badRequest().body("El usuario ya existe");
         }
@@ -99,14 +102,63 @@ public class AuthController {
         Usuario nuevo = new Usuario();
         nuevo.setUsername(request.getUsername());
         nuevo.setPassword(passwordEncoder.encode(request.getPassword()));
+        nuevo.setActivo(true);
 
         Set<Rol> roles = new HashSet<>();
         for (String rolStr : request.getRoles()) {
-            rolRepository.findByNombre(rolStr).ifPresent(roles::add);
+            Rol rol = rolRepository.findByNombre(rolStr)
+                    .orElseThrow(() -> new RuntimeException("Rol no válido: " + rolStr));
+            roles.add(rol);
         }
         nuevo.setRoles(roles);
 
         usuarioRepository.save(nuevo);
-        return ResponseEntity.ok("Usuario registrado exitosamente");
+        return ResponseEntity.ok("Usuario registrado exitosamente con roles: " + request.getRoles());
     }
+
+    @GetMapping("/vendedores")
+    public ResponseEntity<?> listarVendedores() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autenticado.");
+        }
+
+        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+        boolean esAdmin = userDetails.getUsuario().getRoles().stream()
+                .anyMatch(r -> r.getNombre().equals("ADMIN"));
+
+        if (!esAdmin) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo el ADMIN puede ver la lista de vendedores.");
+        }
+
+        Rol rolVendedor = rolRepository.findByNombre("VENDEDOR")
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+
+        List<Usuario> vendedores = usuarioRepository.findByRolesContaining(rolVendedor);
+        return ResponseEntity.ok(vendedores);
+    }
+
+    @PutMapping("/cambiar-password/{id}")
+    public ResponseEntity<?> cambiarPassword(@PathVariable Long id, @RequestBody String nuevaPassword) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No autenticado.");
+        }
+
+        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+        boolean esAdmin = userDetails.getUsuario().getRoles().stream()
+                .anyMatch(r -> r.getNombre().equals("ADMIN"));
+
+        if (!esAdmin) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo el ADMIN puede cambiar contraseñas.");
+        }
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+
+        usuario.setPassword(passwordEncoder.encode(nuevaPassword));
+        usuarioRepository.save(usuario);
+        return ResponseEntity.ok("Contraseña cambiada correctamente.");
+    }
+
 }

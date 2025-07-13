@@ -37,6 +37,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/tipos-producto/**").permitAll()
                         .requestMatchers("/api/productos").permitAll()
                         .requestMatchers("/api/productos/**").permitAll()
+                        .requestMatchers("/api/usuarios/vendedores").permitAll()
+
                         .anyRequest().authenticated() // cualquier otro endpoint necesita autenticación
                 )
                 .sessionManagement(session -> session
