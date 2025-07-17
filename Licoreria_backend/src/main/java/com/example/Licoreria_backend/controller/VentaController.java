@@ -48,6 +48,13 @@ public class VentaController {
         for (ItemVentaRequest item : request.getItems()) {
             Producto p = productoService.obtenerPorId(item.getProductoId())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID " + item.getProductoId()));
+
+
+            if (item.getCantidad() > p.getStock()) {
+                throw new RuntimeException("Stock insuficiente para el producto: " + p.getNombre() +
+                        ". Disponible: " + p.getStock() + ", solicitado: " + item.getCantidad());
+            }
+
             detalles.add(new DetalleVenta(null, item.getCantidad(), p.getPrecio(), p, null));
         }
 
@@ -60,6 +67,7 @@ public class VentaController {
 
         generarPdfBoletaVenta(ventaGuardada, response);
     }
+
 
     @GetMapping("/mis-ventas")
     public List<VentaHistorialDTO> obtenerMisVentas(Authentication authentication) {

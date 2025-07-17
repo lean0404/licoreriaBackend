@@ -50,7 +50,6 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- OpenPDF (en lugar de iText7) -->
 		<dependency>
 			<groupId>com.github.librepdf</groupId>
 			<artifactId>openpdf</artifactId>
