@@ -11,4 +11,6 @@ public class ProductoResponse {
     private Integer stock;
     private Long tipoProductoId;
     private String tipoProductoNombre;
+    private Long marcaId;
+    private String marcaNombre;
 }

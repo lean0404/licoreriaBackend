@@ -9,4 +9,5 @@ public class ProductoRequest {
     private Double precio;
     private Integer stock;
     private Long tipoProductoId;
+    private Long marcaId;
 }

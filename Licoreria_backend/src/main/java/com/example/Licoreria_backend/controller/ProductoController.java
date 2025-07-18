@@ -2,8 +2,10 @@ package com.example.Licoreria_backend.controller;
 
 import com.example.Licoreria_backend.dto.ProductoRequest;
 import com.example.Licoreria_backend.dto.ProductoResponse;
+import com.example.Licoreria_backend.model.Marca;
 import com.example.Licoreria_backend.model.Producto;
 import com.example.Licoreria_backend.model.TipoProducto;
+import com.example.Licoreria_backend.service.MarcaService;
 import com.example.Licoreria_backend.service.ProductoService;
 import com.example.Licoreria_backend.service.TipoProductoService;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +22,14 @@ public class ProductoController {
 
     private final ProductoService productoService;
     private final TipoProductoService tipoProductoService;
+    private final MarcaService marcaService;
 
-    public ProductoController(ProductoService productoService, TipoProductoService tipoProductoService) {
+    public ProductoController(ProductoService productoService,
+                              TipoProductoService tipoProductoService,
+                              MarcaService marcaService) {
         this.productoService = productoService;
         this.tipoProductoService = tipoProductoService;
+        this.marcaService = marcaService;
     }
 
     @GetMapping
@@ -76,10 +82,17 @@ public class ProductoController {
         r.setDescripcion(p.getDescripcion());
         r.setPrecio(p.getPrecio());
         r.setStock(p.getStock());
+
         if (p.getTipoProducto() != null) {
             r.setTipoProductoId(p.getTipoProducto().getId());
             r.setTipoProductoNombre(p.getTipoProducto().getNombre());
         }
+
+        if (p.getMarca() != null) {
+            r.setMarcaId(p.getMarca().getId());
+            r.setMarcaNombre(p.getMarca().getNombre());
+        }
+
         return r;
     }
 
@@ -90,11 +103,19 @@ public class ProductoController {
         p.setDescripcion(request.getDescripcion());
         p.setPrecio(request.getPrecio());
         p.setStock(request.getStock());
+
         if (request.getTipoProductoId() != null) {
             TipoProducto tipo = tipoProductoService.obtenerPorId(request.getTipoProductoId())
                     .orElseThrow(() -> new RuntimeException("TipoProducto no encontrado con id " + request.getTipoProductoId()));
             p.setTipoProducto(tipo);
         }
+
+        if (request.getMarcaId() != null) {
+            Marca marca = marcaService.obtenerPorId(request.getMarcaId())
+                    .orElseThrow(() -> new RuntimeException("Marca no encontrada con id " + request.getMarcaId()));
+            p.setMarca(marca);
+        }
+
         return p;
     }
 
