@@ -161,4 +161,38 @@ public class AuthController {
         return ResponseEntity.ok("Contraseña cambiada correctamente.");
     }
 
+    @PutMapping("/vendedores/{id}")
+    public ResponseEntity<String> actualizarVendedor(
+            @PathVariable Long id,
+            @RequestBody RegistroUsuarioRequest request) {
+
+        Optional<Usuario> optionalUsuario = usuarioRepository.findById(id);
+        if (optionalUsuario.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        }
+
+        Usuario usuario = optionalUsuario.get();
+
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            usuario.setUsername(request.getUsername());
+        }
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            Set<Rol> nuevosRoles = new HashSet<>();
+            for (String rolNombre : request.getRoles()) {
+                Rol rol = rolRepository.findByNombre(rolNombre)
+                        .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + rolNombre));
+                nuevosRoles.add(rol);
+            }
+            usuario.setRoles(nuevosRoles);
+        }
+
+        usuarioRepository.save(usuario);
+        return ResponseEntity.ok("Vendedor actualizado correctamente");
+    }
+
 }
